@@ -1,0 +1,22 @@
+{
+  "name": "friend",
+  "version": "0.1.0",
+  "description": "Attach one element to another",
+  "main": "dist/friend.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "start": "node_modules/webpack/bin/webpack.js --progress --colors --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brandon Pierce <brandon@brandonjpierce.com> (http://brandonjpierce.com/)",
+  "license": "MIT",
+  "devDependencies": {
+    "webpack": "^1.7.3"
+  },
+  "dependencies": {
+    "event-emitter": "^0.3.3",
+    "extend": "^2.0.0"
+  }
+}

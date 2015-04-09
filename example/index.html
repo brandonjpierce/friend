@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Friend</title>
+
+    <link href="//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" rel="stylesheet">
+    <style>
+      body {
+        width: 100%;
+        height: 100%;
+      }
+
+      #outer {
+        height: 200px;
+        overflow-x: scroll;
+        overflow-y: hidden;
+      }
+      #inner {
+        background: #444;
+        border: 1px dashed #080;
+        width: 2500px; height: 100px; margin: 50px; padding: 0;
+      }
+      #scrollable {
+        width: 200px; height: 100px;
+        overflow-x: hidden;
+        overflow-y: scroll;
+      }
+
+      span { font-weight: bold; color: #fff; display: block; }
+      #foo { background-color: #f00; display: block; }
+      #bar { background-color: #00f; display: block; padding: 10px; }
+      #baz { background-color: green; display: block; position: absolute; left: 12px; top: 12px; padding: 15px;}
+    </style>
+  </head>
+  <body>
+    <div id="outer">
+      <div id="inner">
+        <div id="scrollable">
+          <span>Bar</span>
+          <span>Baz</span>
+          <span>Baf</span>
+          <span id="foo">Foo</span>
+          <span>Zap</span>
+          <span>Bing</span>
+          <span>Bang</span>
+          <span>Bada-boom</span>
+        </div>
+      </div>
+    </div>
+    <span id="bar">WTF</span>
+    <span id="baz">WTF</span>
+
+    <script src="../dist/friend.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/tether/0.6.5/tether.min.js"></script>
+    <script>
+      var example1 = new Friend({
+        element: {
+          selector: '#bar',
+          attach: ['left', 'middle'], // x, y
+        },
+        target: {
+          selector: '#foo',
+          attach: ['right', 'middle'] // x, y
+        }
+      });
+
+      var example2 = new Friend({
+        element: {
+          selector: '#baz',
+          attach: ['left', 'middle'], // x, y
+          offset: [0, 0] // x, y
+        },
+        target: {
+          selector: '#bar',
+          attach: ['right', 'middle'] // x, y
+        }
+      });
+
+      setTimeout(function() {
+        example2.disable();
+
+        setTimeout(function() {
+          example2.enable();
+        }, 5000);
+      }, 5000);
+
+    </script>
+  </body>
+</html>
