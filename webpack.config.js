@@ -16,8 +16,6 @@ module.exports = {
   },
   plugins: [
     new webpack.optimize.UglifyJsPlugin(),
-    new webpack.BannerPlugin(banner),
-    new webpack.optimize.DedupePlugin(),
-    new webpack.optimize.OccurenceOrderPlugin()
+    new webpack.BannerPlugin(banner)
   ]
 };

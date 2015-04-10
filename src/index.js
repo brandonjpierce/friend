@@ -1,10 +1,4 @@
 /**
- * TODO
- *
- * 1. handle event handlers if Friend is constructed with enabled to false
- */
-
-/**
  * Dependencies
  */
 var EventEmitter = require('event-emitter');
@@ -12,15 +6,22 @@ var extend = require('extend');
 var utils = require('utils');
 
 /**
+ * Localize some utils vars
+ */
+var transformsSupported = utils.cssTransformSupported();
+var vendorPrefix = utils.getVendorPrefix().lowercase;
+
+/**
  * Default options
  */
 var DEFAULTS = {
   enabled: true,
-  transforms: true,
+  transforms: transformsSupported,
   animate: false,
-  animationDelay: '100ms',
+  animationDuration: '100ms',
   animationEasing: 'cubic-bezier(0.55,0,0.1,1)',
-  debounceThreshold: 0,
+  throttle: false,
+  throttleSpeed: 100,
 };
 
 /**
@@ -30,29 +31,25 @@ var DEFAULTS = {
  * @return {Object} Friend instance
  */
 function Friend(options) {
-  var vendorPrefix = utils.getVendorPrefix().lowercase;
-
+  this._enabled = false;
+  this._initalStylesSet = false;
   this._transformName = vendorPrefix + 'Transform';
   this._transitionName = vendorPrefix + 'Transition';
-  this._transformSupported = utils.cssTransformSupported();
+  this._transformSupported = transformsSupported;
   this._defaults = DEFAULTS;
   this._options = extend({}, DEFAULTS, options);
 
   this.element = {};
   this.target = {};
 
-  // debounce our position method to improve performance
-  this._debounced = utils.debounce(
-    this.position.bind(this),
-    this._options.debounceThreshold,
-    true
-  );
+  // throttle our position method to improve performance
+  this._throttled = this._options.throttle ?
+    utils.throttle(this.position.bind(this), this._options.throttleSpeed) :
+    this.position.bind(this);
 
   if (this._options.enabled) {
     this.enable();
   }
-
-  console.log(this);
 
   return this;
 }
@@ -85,6 +82,8 @@ Friend.prototype.position = function() {
     this._findNodes();
     this._nextTick(this._attachElements);
   }
+
+  console.log('positioning');
 
   return this;
 };
@@ -129,6 +128,53 @@ Friend.prototype.enable = function() {
  * @return {Friend}
  */
 Friend.prototype.disable = function() {
+  if (!this._enabled) {
+    return;
+  }
+
+  this._resetCSS();
+  this._disableHandlers();
+  this._initalStylesSet = false;
+  this._enabled = false;
+
+  return this;
+};
+
+/**
+ * Setup event handlers
+ *
+ * @api private
+ */
+Friend.prototype._enableHandlers = function() {
+  // this will handle nested scroll elements
+  this.target.scrollParents.forEach(function(node) {
+    utils.addEvent(node, 'scroll', this._throttled);
+  }, this);
+
+  utils.addEvent(this.target.node, 'friend:positioning', this._throttled);
+  utils.addEvent(window, 'resize', this._throttled);
+};
+
+/**
+ * Disable event handlers
+ *
+ * @api private
+ */
+Friend.prototype._disableHandlers = function() {
+  this.target.scrollParents.forEach(function(node) {
+    utils.removeEvent(node, 'scroll', this._throttled);
+  }, this);
+
+  utils.removeEvent(window, 'resize', this._throttled);
+  utils.removeEvent(this.target.node, 'friend:positioning', this._throttled);
+};
+
+/**
+ * Reset elements CSS styles back to initial state
+ *
+ * @api private
+ */
+Friend.prototype._resetCSS = function() {
   var css = {
     position: this.element.initialStyles.position,
     left: this.element.initialStyles.left,
@@ -148,27 +194,6 @@ Friend.prototype.disable = function() {
       this.element.node.style[key] = css[key];
     }
   }
-
-  this.target.scrollParents.forEach(function(node) {
-    utils.removeEvent(node, 'scroll', this._debounced);
-  }, this);
-
-  utils.removeEvent(window, 'resize', this._debounced);
-  utils.removeEvent(this.target.node, 'friend:positioning', this._debounced);
-
-  this._initalStylesSet = false;
-
-  return this;
-};
-
-Friend.prototype._enableHandlers = function() {
-  // this will handle nested scroll elements
-  this.target.scrollParents.forEach(function(node) {
-    utils.addEvent(node, 'scroll', this._debounced);
-  }, this);
-
-  utils.addEvent(this.target.node, 'friend:positioning', this._debounced);
-  utils.addEvent(window, 'resize', this._debounced);
 };
 
 /**
@@ -188,7 +213,14 @@ Friend.prototype._findNodes = function() {
     this.target.node = utils.getDomNode(target);
   }
 
-  if (!this.target.hasOwnProperty('scrollParent')) {
+  // remove node from its current position and insert into the body. This is
+  // needed to allow position: absolute to work within relative scroll containers
+  if (this.element.node.parentNode.tagName !== 'BODY') {
+    this.element.node.parentNode.removeChild(this.element.node);
+    document.body.appendChild(this.element.node);
+  }
+
+  if (!this.target.hasOwnProperty('scrollParents')) {
     this.target.scrollParents = utils.getScrollParents(this.target.node);
   }
 
@@ -202,9 +234,10 @@ Friend.prototype._findNodes = function() {
 };
 
 /**
+ * Grab initial CSS state of our element
  *
+ * @api private
  */
-
 Friend.prototype._getInitialStyles = function() {
   return {
     position: utils.getStyle(this.element.node, 'position'),
@@ -230,15 +263,14 @@ Friend.prototype._setFriendStyles = function() {
 
   if (this._options.animate) {
     if (this._options.transforms && this._transformSupported) {
-       css[this._transitionName] = 'transform ' + this._options.animationDelay +
+       css[this._transitionName] = 'transform ' + this._options.animationDuration +
         ' ' + this._options.animationEasing;
     } else {
-      css[this._transitionName] = 'left ' + this._options.animationDelay + ' ' +
-        this._options.animationEasing + ', top ' + this._options.animationDelay +
+      css[this._transitionName] = 'left ' + this._options.animationDuration + ' ' +
+        this._options.animationEasing + ', top ' + this._options.animationDuration +
         ' ' + this._options.animationEasing;
     }
   }
-
 
   for (var key in css) {
     if (css.hasOwnProperty(key)) {
@@ -255,10 +287,10 @@ Friend.prototype._setFriendStyles = function() {
  * @api private
  */
 Friend.prototype._attachElements = function() {
-  var targetAttach = this._getTargetAttachment().points;
-  var elementAttach = this._getElementAttachment().points;
-  var leftPoint = targetAttach.left - elementAttach.left;
-  var topPoint = targetAttach.top - elementAttach.top;
+  var targetAttach = this._getTargetAttachment();
+  var elementAttach = this._getElementAttachment();
+  var leftPoint = Math.round(targetAttach.left - elementAttach.left);
+  var topPoint = Math.round(targetAttach.top - elementAttach.top);
   var css = {};
 
   var transformValue = [
@@ -338,19 +370,23 @@ Friend.prototype._getElementAttachment = function() {
   var bounds = this.element.bounds = this._getBounds(this.element.node);
   var attachments = this._options.element.attach;
   var offset = this._options.element.offset || [0, 0];
-  var data = { points: {} };
-  var x = data.x = attachments[0];
-  var y = data.y = attachments[1];
+  var points = {};
+  var x = attachments[0];
+  var y = attachments[1];
+
+  if (attachments.length <= 1) {
+    throw new Error('Invalid attach property set for element');
+  }
 
   switch (x) {
     case 'left':
-      data.points.left = 0 - offset[0];
+      points.left = 0 - offset[0];
       break;
     case 'middle':
-      data.points.left = (bounds.width / 2) + offset[0];
+      points.left = (bounds.width / 2) + offset[0];
       break;
     case 'right':
-      data.points.left = bounds.width + offset[0];
+      points.left = bounds.width + offset[0];
       break;
     default:
       throw new Error('X axis attachment point for element object is inavalid');
@@ -358,21 +394,21 @@ Friend.prototype._getElementAttachment = function() {
 
   switch (y) {
     case 'top':
-      data.points.top = 0 + offset[1];
+      points.top = 0 + offset[1];
       break;
     case 'middle':
-      data.points.top = (bounds.height / 2) + offset[1];
+      points.top = (bounds.height / 2) + offset[1];
       break;
     case 'bottom':
-      data.points.top = bounds.height - offset[1];
+      points.top = bounds.height - offset[1];
       break;
     default:
       throw new Error('Y axis attachment point for element object is inavalid');
   }
 
-  this.element.attachment = data.points;
+  this.element.attachment = points;
 
-  return data;
+  return points;
 };
 
 /**
@@ -383,20 +419,20 @@ Friend.prototype._getElementAttachment = function() {
  */
 Friend.prototype._getTargetAttachment = function() {
   var bounds = this.target.bounds = this._getBounds(this.target.node);
-  var attachments = this._options.target.attach;
-  var data = { points: {} };
-  var x = data.x = attachments[0];
-  var y = data.y = attachments[1];
+  var attachments = this._options.target.attach || this._options.element.attach;
+  var points = {};
+  var x = attachments[0];
+  var y = attachments[1];
 
   switch (x) {
     case 'left':
-      data.points.left = bounds.left;
+      points.left = bounds.left;
       break;
     case 'middle':
-      data.points.left = bounds.left + (bounds.width / 2);
+      points.left = bounds.left + (bounds.width / 2);
       break;
     case 'right':
-      data.points.left = bounds.right;
+      points.left = bounds.right;
       break;
     default:
       throw new Error('X axis attachment point for target object is inavalid');
@@ -404,21 +440,21 @@ Friend.prototype._getTargetAttachment = function() {
 
   switch (y) {
     case 'top':
-      data.points.top = bounds.top;
+      points.top = bounds.top;
       break;
     case 'middle':
-      data.points.top = bounds.top + (bounds.height / 2);
+      points.top = bounds.top + (bounds.height / 2);
       break;
     case 'bottom':
-      data.points.top = bounds.bottom;
+      points.top = bounds.bottom;
       break;
     default:
       throw new Error('Y axis attachment point for target object is inavalid');
   }
 
-  this.target.attachment = data.points;
+  this.target.attachment = points;
 
-  return data;
+  return points;
 };
 
 /**

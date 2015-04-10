@@ -1,36 +1,23 @@
 module.exports = {
 
   /**
-   * Simple debounce function we use for window resizing
+   * Simple throttle function
    *
-   * @source https://gist.github.com/vincentorback/9649034
-   *
-   * @param  {Function} func The function we want to execute after debounce
-   * @param  {Number} threshold Time until the function can be called again
-   * @param  {Boolean} execAsap Execute function immediatialy when debounce called?
+   * @param {Function} fn Function we want to throttle
+   * @param {Number} delay Throttle delay
    */
-  debounce: function(func, threshold, execAsap) {
+  throttle: function(fn, delay) {
     var timeout;
 
-    return function debounced() {
-      var obj = this;
-      var args = Array.prototype.slice.apply(arguments);
-
-      function delayed () {
-        if (!execAsap) {
-          func.apply(obj, args);
-        }
-
-        timeout = null;
+    return function() {
+      var args = arguments;
+      var context = this;
+      if (!timeout) {
+        timeout = setTimeout(function() {
+          timeout = 0;
+          return fn.apply(context, args);
+        }, delay);
       }
-
-      if (timeout) {
-        clearTimeout(timeout);
-      } else if (execAsap) {
-        func.apply(obj, args);
-      }
-
-      timeout = setTimeout(delayed, threshold);
     };
   },
 
