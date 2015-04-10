@@ -1,4 +1,11 @@
 /**
+ * TODO
+ *
+ * 1. setup a small caching system so we can reduce our position() calls
+ * 2. fix issue with offscreen friends still moving via transform
+ */
+
+/**
  * Dependencies
  */
 var EventEmitter = require('event-emitter');
@@ -24,6 +31,19 @@ var DEFAULTS = {
   throttleSpeed: 100,
 };
 
+var EVENTS = {
+  positioning: 'positioning',
+  positioned: 'positioned',
+  initialized: 'initialized',
+  enabled: 'enabled',
+  disabled: 'disabled'
+};
+
+/**
+ * Attach event emitter to our Friend class
+ */
+EventEmitter(Friend.prototype);
+
 /**
  * Friend constructor
  *
@@ -32,13 +52,11 @@ var DEFAULTS = {
  */
 function Friend(options) {
   this._enabled = false;
-  this._initalStylesSet = false;
+  this._initialized = false;
   this._transformName = vendorPrefix + 'Transform';
   this._transitionName = vendorPrefix + 'Transition';
-  this._transformSupported = transformsSupported;
   this._defaults = DEFAULTS;
   this._options = extend({}, DEFAULTS, options);
-
   this.element = {};
   this.target = {};
 
@@ -53,8 +71,6 @@ function Friend(options) {
 
   return this;
 }
-
-EventEmitter(Friend.prototype);
 
 /**
  * Add plugins or additional functionality to friend
@@ -74,16 +90,13 @@ Friend.prototype.use = function(fn) {
  * @return {Friend}
  */
 Friend.prototype.position = function() {
-  this.emit('positioning');
+  this.emit(EVENTS.positioning);
 
   if (!this._enabled) {
     this.enable();
   } else {
-    this._findNodes();
     this._nextTick(this._attachElements);
   }
-
-  console.log('positioning');
 
   return this;
 };
@@ -100,7 +113,7 @@ Friend.prototype.update = function(options, positionAfter) {
   this._options = extend(this._options, options, true);
 
   if (positionAfter) {
-    this.positionAfter();
+    this.position();
   }
 
   return this;
@@ -112,12 +125,16 @@ Friend.prototype.update = function(options, positionAfter) {
  * @return {Friend}
  */
 Friend.prototype.enable = function() {
-  this._enabled = true;
-  this._findNodes();
+  if (!this._initialized) {
+    this._findNodes();
+  }
+
+  this._setFriendStyles();
   this._enableHandlers();
   this._nextTick(this._attachElements);
 
-  this.emit('intialized');
+  this._enabled = true;
+  this.emit(EVENTS.enabled);
 
   return this;
 };
@@ -134,8 +151,9 @@ Friend.prototype.disable = function() {
 
   this._resetCSS();
   this._disableHandlers();
-  this._initalStylesSet = false;
+
   this._enabled = false;
+  this.emit(EVENTS.disabled);
 
   return this;
 };
@@ -151,7 +169,7 @@ Friend.prototype._enableHandlers = function() {
     utils.addEvent(node, 'scroll', this._throttled);
   }, this);
 
-  utils.addEvent(this.target.node, 'friend:positioning', this._throttled);
+  utils.addEvent(this.target.node, 'friend:' + EVENTS.positioned, this._throttled);
   utils.addEvent(window, 'resize', this._throttled);
 };
 
@@ -166,7 +184,7 @@ Friend.prototype._disableHandlers = function() {
   }, this);
 
   utils.removeEvent(window, 'resize', this._throttled);
-  utils.removeEvent(this.target.node, 'friend:positioning', this._throttled);
+  utils.removeEvent(this.target.node, 'friend:' + EVENTS.positioned, this._throttled);
 };
 
 /**
@@ -181,7 +199,7 @@ Friend.prototype._resetCSS = function() {
     top: this.element.initialStyles.top
   };
 
-  if (this._options.transforms && this._transformSupported) {
+  if (this._options.transforms && transformsSupported) {
     css[this._transformName] = null;
   }
 
@@ -205,31 +223,27 @@ Friend.prototype._findNodes = function() {
   var element = this._options.element.selector;
   var target = this._options.target.selector;
 
-  if (!this.element.hasOwnProperty('node')) {
-    this.element.node = utils.getDomNode(element);
-  }
+  this.element.node = utils.getDomNode(element);
+  this.target.node = utils.getDomNode(target);
+  this.target.scrollParents = utils.getScrollParents(this.target.node);
+  this.element.initialStyles = this._getInitialStyles();
 
-  if (!this.target.hasOwnProperty('node')) {
-    this.target.node = utils.getDomNode(target);
-  }
+  this._moveElement();
+  this._initialized = true;
+  this.emit(EVENTS.initialized);
+};
 
+/**
+ * Move element into the body
+ *
+ * @api private
+ */
+Friend.prototype._moveElement = function() {
   // remove node from its current position and insert into the body. This is
   // needed to allow position: absolute to work within relative scroll containers
   if (this.element.node.parentNode.tagName !== 'BODY') {
     this.element.node.parentNode.removeChild(this.element.node);
     document.body.appendChild(this.element.node);
-  }
-
-  if (!this.target.hasOwnProperty('scrollParents')) {
-    this.target.scrollParents = utils.getScrollParents(this.target.node);
-  }
-
-  if (!this.element.hasOwnProperty('initialStyles')) {
-    this.element.initialStyles = this._getInitialStyles();
-  }
-
-  if (!this._initalStylesSet) {
-    this._setFriendStyles();
   }
 };
 
@@ -262,7 +276,7 @@ Friend.prototype._setFriendStyles = function() {
   };
 
   if (this._options.animate) {
-    if (this._options.transforms && this._transformSupported) {
+    if (this._options.transforms && transformsSupported) {
        css[this._transitionName] = 'transform ' + this._options.animationDuration +
         ' ' + this._options.animationEasing;
     } else {
@@ -299,7 +313,7 @@ Friend.prototype._attachElements = function() {
     'translateY(' + topPoint + 'px)'
   ];
 
-  if (this._options.transforms && this._transformSupported) {
+  if (this._options.transforms && transformsSupported) {
     css[this._transformName] = transformValue.join(' ');
   } else {
     css.left = leftPoint + 'px';
@@ -316,13 +330,13 @@ Friend.prototype._attachElements = function() {
   // have successfully been positioned
   if (this._options.animate) {
     utils.onAnimationEnd(this.element.node, function() {
-      utils.triggerEvent(this.element.node, 'friend:positioning');
+      utils.triggerEvent(this.element.node, 'friend:' + EVENTS.positioned);
     }.bind(this));
   } else {
-    utils.triggerEvent(this.element.node, 'friend:positioning');
+    utils.triggerEvent(this.element.node, 'friend:' + EVENTS.positioned);
   }
 
-  this.emit('positioned');
+  this.emit(EVENTS.positioned);
 };
 
 /**
@@ -375,37 +389,27 @@ Friend.prototype._getElementAttachment = function() {
   var y = attachments[1];
 
   if (attachments.length <= 1) {
-    throw new Error('Invalid attach property set for element');
+    throw new Error('Invalid attach property set for element object');
   }
 
-  switch (x) {
-    case 'left':
-      points.left = 0 - offset[0];
-      break;
-    case 'middle':
-      points.left = (bounds.width / 2) + offset[0];
-      break;
-    case 'right':
-      points.left = bounds.width + offset[0];
-      break;
-    default:
-      throw new Error('X axis attachment point for element object is inavalid');
+  var xValues = {
+    left: 0 - offset[0],
+    middle: (bounds.width / 2) + offset[0],
+    right: bounds.width + offset[0]
+  };
+
+  var yValues = {
+    top: 0 + offset[1],
+    middle: (bounds.height / 2) + offset[1],
+    bottom: bounds.height - offset[1]
+  };
+
+  if (!xValues.hasOwnProperty(x) || !yValues.hasOwnProperty(y)) {
+    throw new Error('Invalid attach values for element object');
   }
 
-  switch (y) {
-    case 'top':
-      points.top = 0 + offset[1];
-      break;
-    case 'middle':
-      points.top = (bounds.height / 2) + offset[1];
-      break;
-    case 'bottom':
-      points.top = bounds.height - offset[1];
-      break;
-    default:
-      throw new Error('Y axis attachment point for element object is inavalid');
-  }
-
+  points.left = xValues[x];
+  points.top = yValues[y];
   this.element.attachment = points;
 
   return points;
@@ -424,34 +428,24 @@ Friend.prototype._getTargetAttachment = function() {
   var x = attachments[0];
   var y = attachments[1];
 
-  switch (x) {
-    case 'left':
-      points.left = bounds.left;
-      break;
-    case 'middle':
-      points.left = bounds.left + (bounds.width / 2);
-      break;
-    case 'right':
-      points.left = bounds.right;
-      break;
-    default:
-      throw new Error('X axis attachment point for target object is inavalid');
+  var xValues = {
+    left: bounds.left,
+    middle: bounds.left + (bounds.width / 2),
+    right: bounds.right
+  };
+
+  var yValues = {
+    top: bounds.top,
+    middle: bounds.top + (bounds.height / 2),
+    bottom: bounds.bottom
+  };
+
+  if (!xValues.hasOwnProperty(x) || !yValues.hasOwnProperty(y)) {
+    throw new Error('Invalid attach values for target object');
   }
 
-  switch (y) {
-    case 'top':
-      points.top = bounds.top;
-      break;
-    case 'middle':
-      points.top = bounds.top + (bounds.height / 2);
-      break;
-    case 'bottom':
-      points.top = bounds.bottom;
-      break;
-    default:
-      throw new Error('Y axis attachment point for target object is inavalid');
-  }
-
+  points.left = xValues[x];
+  points.top = yValues[y];
   this.target.attachment = points;
 
   return points;
