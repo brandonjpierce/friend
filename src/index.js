@@ -31,6 +31,9 @@ var DEFAULTS = {
   throttleSpeed: 100,
 };
 
+/**
+ * Event names
+ */
 var EVENTS = {
   positioning: 'positioning',
   positioned: 'positioned',
@@ -131,10 +134,9 @@ Friend.prototype.enable = function() {
 
   this._setFriendStyles();
   this._enableHandlers();
-  this._nextTick(this._attachElements);
-
   this._enabled = true;
   this.emit(EVENTS.enabled);
+  this.position();
 
   return this;
 };
