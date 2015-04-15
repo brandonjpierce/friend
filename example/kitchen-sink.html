@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Friend.js - A small, extendable, performance focused, and dependency free JavaScript positioning engine</title>
+    <link href="//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" rel="stylesheet">
+
+    <style>
+      #tether-target,
+      #friend-target {
+        background: green;
+        height: 100px;
+        width: 100px;
+        margin-bottom: 5px;
+      }
+
+      #tether-element,
+      #friend-element {
+        background: red;
+        height: 50px;
+        width: 50px;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="tether-element"></div>
+    <div id="tether-target"></div>
+
+    <div id="friend-element"></div>
+    <div id="friend-target"></div>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/tether/0.6.5/tether.min.js"></script>
+    <script src="../dist/friend.js"></script>
+
+    <script>
+      var tether = new Tether({
+        element: '#tether-element',
+        target: '#tether-target',
+        attachment: 'top left',
+        targetAttachment: 'top right'
+      });
+
+      var friend = new Friend({
+        element: {
+          selector: '#friend-element',
+          attach: ['left', 'top']
+        },
+        target: {
+          selector: '#friend-target',
+          attach: ['right', 'top']
+        }
+      });
+
+      setTimeout(function() {
+        $('body').css('overflow', 'scroll');
+      }, 1000);
+    </script>
+  </body>
+</html>

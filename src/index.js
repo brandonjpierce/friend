@@ -2,7 +2,6 @@
  * TODO
  *
  * 1. setup a small caching system so we can reduce our position() calls
- * 2. fix issue with offscreen friends still moving via transform
  */
 
 /**
@@ -60,13 +59,15 @@ function Friend(options) {
   this._transitionName = vendorPrefix + 'Transition';
   this._defaults = DEFAULTS;
   this._options = extend({}, DEFAULTS, options);
+
   this.element = {};
   this.target = {};
 
   // throttle our position method to improve performance
-  this._throttled = this._options.throttle ?
-    utils.throttle(this.position.bind(this), this._options.throttleSpeed) :
-    this.position.bind(this);
+  var positionFn = this.position.bind(this);
+  this._positionFn = this._options.throttle ?
+    utils.throttle(positionFn, this._options.throttleSpeed) :
+    positionFn;
 
   if (this._options.enabled) {
     this.enable();
@@ -95,6 +96,7 @@ Friend.prototype.use = function(fn) {
 Friend.prototype.position = function() {
   this.emit(EVENTS.positioning);
 
+  // we need to make sure Friend is enabled before positioning
   if (!this._enabled) {
     this.enable();
   } else {
@@ -132,8 +134,11 @@ Friend.prototype.enable = function() {
     this._findNodes();
   }
 
+  // setup initial styles and handlers
   this._setFriendStyles();
   this._enableHandlers();
+
+  // let friend know were enabled and position element
   this._enabled = true;
   this.emit(EVENTS.enabled);
   this.position();
@@ -151,9 +156,11 @@ Friend.prototype.disable = function() {
     return;
   }
 
+  // reset element back to original state and clean up event handlers
   this._resetCSS();
   this._disableHandlers();
 
+  // let friend know were disabled
   this._enabled = false;
   this.emit(EVENTS.disabled);
 
@@ -168,11 +175,11 @@ Friend.prototype.disable = function() {
 Friend.prototype._enableHandlers = function() {
   // this will handle nested scroll elements
   this.target.scrollParents.forEach(function(node) {
-    utils.addEvent(node, 'scroll', this._throttled);
+    utils.addEvent(node, 'scroll', this._positionFn);
   }, this);
 
-  utils.addEvent(this.target.node, 'friend:' + EVENTS.positioned, this._throttled);
-  utils.addEvent(window, 'resize', this._throttled);
+  utils.addEvent(this.target.node, 'friend:' + EVENTS.positioned, this._positionFn);
+  utils.addEvent(window, 'resize', this._positionFn);
 };
 
 /**
@@ -182,11 +189,11 @@ Friend.prototype._enableHandlers = function() {
  */
 Friend.prototype._disableHandlers = function() {
   this.target.scrollParents.forEach(function(node) {
-    utils.removeEvent(node, 'scroll', this._throttled);
+    utils.removeEvent(node, 'scroll', this._positionFn);
   }, this);
 
-  utils.removeEvent(window, 'resize', this._throttled);
-  utils.removeEvent(this.target.node, 'friend:' + EVENTS.positioned, this._throttled);
+  utils.removeEvent(window, 'resize', this._positionFn);
+  utils.removeEvent(this.target.node, 'friend:' + EVENTS.positioned, this._positionFn);
 };
 
 /**
@@ -255,10 +262,12 @@ Friend.prototype._moveElement = function() {
  * @api private
  */
 Friend.prototype._getInitialStyles = function() {
+  var elementStyles = utils.getStyles(this.element.node);
+
   return {
-    position: utils.getStyle(this.element.node, 'position'),
-    left: utils.getStyle(this.element.node, 'left') || 0,
-    top: utils.getStyle(this.element.node, 'top') || 0
+    position: elementStyles.position,
+    left: elementStyles.left || 0,
+    top: elementStyles.top || 0
   };
 };
 
@@ -269,7 +278,7 @@ Friend.prototype._getInitialStyles = function() {
  * @api private
  */
 Friend.prototype._setFriendStyles = function() {
-  var positionType = utils.getStyle(this.target.node, 'position');
+  var positionType = utils.getStyles(this.target.node).position;
 
   var css = {
     position: positionType === 'fixed' ? positionType : 'absolute',
@@ -278,14 +287,18 @@ Friend.prototype._setFriendStyles = function() {
   };
 
   if (this._options.animate) {
+    var easing = this._options.animationEasing;
+    var duration = this._options.animationDuration;
+    var animStyle = duration + ' ' + easing;
+    var anim = null;
+
     if (this._options.transforms && transformsSupported) {
-       css[this._transitionName] = 'transform ' + this._options.animationDuration +
-        ' ' + this._options.animationEasing;
+      anim = 'transform ' + ' ' + animStyle;
     } else {
-      css[this._transitionName] = 'left ' + this._options.animationDuration + ' ' +
-        this._options.animationEasing + ', top ' + this._options.animationDuration +
-        ' ' + this._options.animationEasing;
+      anim = 'left ' + animStyle + ', top ' + animStyle;
     }
+
+    css[this._transitionName] = anim;
   }
 
   for (var key in css) {
@@ -351,21 +364,12 @@ Friend.prototype._attachElements = function() {
 Friend.prototype._getBounds = function(element) {
   var bounds = {};
   var clientRect = element.getBoundingClientRect();
-  var documentEl = document.documentElement;
 
   for (var key in clientRect) {
     if (clientRect.hasOwnProperty(key)) {
       bounds[key] = clientRect[key];
     }
   }
-
-  bounds.top +=
-    (window.pageYOffset || documentEl.scrollTop) -
-    (documentEl.clientTop  || 0);
-
-  bounds.left +=
-    (window.pageXOffset || documentEl.scrollLeft) -
-    (documentEl.clientLeft  || 0);
 
   // older versions of some browsers do not ship width / height
   if (!bounds.hasOwnProperty('width') || !bounds.hasOwnProperty('height')) {
@@ -412,6 +416,7 @@ Friend.prototype._getElementAttachment = function() {
 
   points.left = xValues[x];
   points.top = yValues[y];
+
   this.element.attachment = points;
 
   return points;
@@ -424,6 +429,9 @@ Friend.prototype._getElementAttachment = function() {
  * @api private
  */
 Friend.prototype._getTargetAttachment = function() {
+  var documentEl = document.documentElement;
+  var offsetX = window.pageXOffset || documentEl.scrollLeft;
+  var offsetY = window.pageYOffset || documentEl.scrollTop;
   var bounds = this.target.bounds = this._getBounds(this.target.node);
   var attachments = this._options.target.attach || this._options.element.attach;
   var points = {};
@@ -446,8 +454,9 @@ Friend.prototype._getTargetAttachment = function() {
     throw new Error('Invalid attach values for target object');
   }
 
-  points.left = xValues[x];
-  points.top = yValues[y];
+  points.left = xValues[x] + offsetX;
+  points.top = yValues[y] + offsetY;
+
   this.target.attachment = points;
 
   return points;

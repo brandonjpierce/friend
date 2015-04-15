@@ -82,20 +82,12 @@ module.exports = {
    * @param {Object} node DOM node
    * @param {String} styleProp Style prop you want to get
    */
-  getStyle: function(node, styleProp) {
-    var style = null;
-
-    if (node && node.nodeType === 1) {
-    	if (node.currentStyle) {
-    		style = node.currentStyle[styleProp];
-    	} else if (window.getComputedStyle) {
-    		style = document.defaultView
-          .getComputedStyle(node, null)
-          .getPropertyValue(styleProp);
-      }
+  getStyles: function(node) {
+    if (!node || node.nodeType !== 1) {
+    	return null;
     }
 
-  	return style;
+  	return node.currentStyle || document.defaultView.getComputedStyle(node);
   },
 
   /**
@@ -104,7 +96,11 @@ module.exports = {
    * @param {Object} node DOM node
    */
   getScrollParents: function(node) {
-    var positionType = this.getStyle(node, 'position');
+    if (node.nodeType !== 1) {
+      return document;
+    }
+
+    var positionType = this.getStyles(node).position;
     var parentNode = node.parentNode;
     var parents = [];
 
@@ -114,30 +110,35 @@ module.exports = {
     }
 
     while (parentNode) {
-      var overflow = this.getStyle(parentNode, 'overflow');
-      var overflowY = this.getStyle(parentNode, 'overflowY');
-      var overflowX = this.getStyle(parentNode, 'overflowX');
-      var parentPositionType = this.getStyle(parentNode, 'position');
+      if (parentNode.nodeType === 1) {
+        var parentStyles = this.getStyles(parentNode);
+        var overflow = parentStyles.overflow;
+        var overflowY = parentStyles.overflowY;
+        var overflowX = parentStyles.overflowX;
+        var parentPositionType = parentStyles.position;
 
-      var regTest = /(auto|scroll)/;
-      var regValue = overflow + overflowY + overflowX;
+        var regTest = /(auto|scroll)/;
+        var regValue = overflow + overflowY + overflowX;
 
-      if (regTest.test(regValue)) {
-        if (positionType !== 'absolute' ||
-           (
-             parentPositionType === 'relative' ||
-             parentPositionType === 'absolute' ||
-             parentPositionType === 'fixed'
-           )
-        ) {
-          parents.push(parentNode);
+        if (regTest.test(regValue)) {
+          if (positionType !== 'absolute' ||
+             (
+               parentPositionType === 'relative' ||
+               parentPositionType === 'absolute' ||
+               parentPositionType === 'fixed'
+             )
+          ) {
+            parents.push(parentNode);
+          }
         }
       }
 
       parentNode = parentNode.parentNode;
     }
 
-    parents.push(document);
+    if (!parents.length) {
+      parents.push(document);
+    }
 
     return parents;
   },
