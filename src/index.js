@@ -2,6 +2,7 @@
  * TODO
  *
  * 1. setup a small caching system so we can reduce our position() calls
+ * 2. insert element back into original dom position when disabled
  */
 
 /**
@@ -16,6 +17,8 @@ var utils = require('utils');
  */
 var transformsSupported = utils.cssTransformSupported();
 var vendorPrefix = utils.getVendorPrefix().lowercase;
+var transitionName = vendorPrefix + 'Transition';
+var transformName = vendorPrefix + 'Transform';
 
 /**
  * Default options
@@ -54,24 +57,11 @@ EventEmitter(Friend.prototype);
  */
 function Friend(options) {
   this._enabled = false;
-  this._initialized = false;
-  this._transformName = vendorPrefix + 'Transform';
-  this._transitionName = vendorPrefix + 'Transition';
-  this._defaults = DEFAULTS;
   this._options = extend({}, DEFAULTS, options);
-
   this.element = {};
   this.target = {};
 
-  // throttle our position method to improve performance
-  var positionFn = this.position.bind(this);
-  this._positionFn = this._options.throttle ?
-    utils.throttle(positionFn, this._options.throttleSpeed) :
-    positionFn;
-
-  if (this._options.enabled) {
-    this.enable();
-  }
+  this._initialize();
 
   return this;
 }
@@ -130,11 +120,12 @@ Friend.prototype.update = function(options, positionAfter) {
  * @return {Friend}
  */
 Friend.prototype.enable = function() {
-  if (!this._initialized) {
-    this._findNodes();
+  if (this._enabled) {
+    return;
   }
 
   // setup initial styles and handlers
+  this._moveElement();
   this._setFriendStyles();
   this._enableHandlers();
 
@@ -157,7 +148,8 @@ Friend.prototype.disable = function() {
   }
 
   // reset element back to original state and clean up event handlers
-  this._resetCSS();
+  this._moveBackElement();
+  this._removeFriendStyles();
   this._disableHandlers();
 
   // let friend know were disabled
@@ -165,6 +157,27 @@ Friend.prototype.disable = function() {
   this.emit(EVENTS.disabled);
 
   return this;
+};
+
+/**
+ * Initialize Friend
+ */
+Friend.prototype._initialize = function() {
+  // find our elements and get initial data for them
+  this._findNodes();
+
+  // determine if our position function is throttled or regular
+  var positionFn = this.position.bind(this);
+  this._positionFn = this._options.throttle ?
+    utils.throttle(positionFn, this._options.throttleSpeed) :
+    positionFn;
+
+  // auto enable Friend if option is set
+  if (this._options.enabled) {
+    this.enable();
+  }
+
+  this.emit(EVENTS.initialized);
 };
 
 /**
@@ -197,33 +210,6 @@ Friend.prototype._disableHandlers = function() {
 };
 
 /**
- * Reset elements CSS styles back to initial state
- *
- * @api private
- */
-Friend.prototype._resetCSS = function() {
-  var css = {
-    position: this.element.initialStyles.position,
-    left: this.element.initialStyles.left,
-    top: this.element.initialStyles.top
-  };
-
-  if (this._options.transforms && transformsSupported) {
-    css[this._transformName] = null;
-  }
-
-  if (this._options.animate) {
-    css[this._transitionName] = null;
-  }
-
-  for (var key in css) {
-    if (css.hasOwnProperty(key)) {
-      this.element.node.style[key] = css[key];
-    }
-  }
-};
-
-/**
  * Find our element and target nodes in the DOM
  *
  * @api private
@@ -232,14 +218,14 @@ Friend.prototype._findNodes = function() {
   var element = this._options.element.selector;
   var target = this._options.target.selector;
 
-  this.element.node = utils.getDomNode(element);
+  // target node and scroll parents
   this.target.node = utils.getDomNode(target);
   this.target.scrollParents = utils.getScrollParents(this.target.node);
-  this.element.initialStyles = this._getInitialStyles();
 
-  this._moveElement();
-  this._initialized = true;
-  this.emit(EVENTS.initialized);
+  // element node and initial data
+  this.element.node = utils.getDomNode(element);
+  this.element.initialStyles = this._getInitialStyles();
+  this.element.initialParent = this.element.node.parentNode;
 };
 
 /**
@@ -248,11 +234,21 @@ Friend.prototype._findNodes = function() {
  * @api private
  */
 Friend.prototype._moveElement = function() {
-  // remove node from its current position and insert into the body. This is
-  // needed to allow position: absolute to work within relative scroll containers
   if (this.element.node.parentNode.tagName !== 'BODY') {
     this.element.node.parentNode.removeChild(this.element.node);
     document.body.appendChild(this.element.node);
+  }
+};
+
+/**
+ * Move element back to its original position
+ *
+ * @api private
+ */
+Friend.prototype._moveBackElement = function() {
+  if (this.element.initialParent.tagName !== 'BODY') {
+    document.body.removeChild(this.element.node);
+    this.element.initialParent.appendChild(this.element.node);
   }
 };
 
@@ -298,7 +294,7 @@ Friend.prototype._setFriendStyles = function() {
       anim = 'left ' + animStyle + ', top ' + animStyle;
     }
 
-    css[this._transitionName] = anim;
+    css[transitionName] = anim;
   }
 
   for (var key in css) {
@@ -308,6 +304,33 @@ Friend.prototype._setFriendStyles = function() {
   }
 
   this._initalStylesSet = true;
+};
+
+/**
+ * Reset elements CSS styles back to initial state
+ *
+ * @api private
+ */
+Friend.prototype._removeFriendStyles = function() {
+  var css = {
+    position: this.element.initialStyles.position,
+    left: this.element.initialStyles.left,
+    top: this.element.initialStyles.top
+  };
+
+  if (this._options.transforms && transformsSupported) {
+    css[transformName] = null;
+  }
+
+  if (this._options.animate) {
+    css[transitionName] = null;
+  }
+
+  for (var key in css) {
+    if (css.hasOwnProperty(key)) {
+      this.element.node.style[key] = css[key];
+    }
+  }
 };
 
 /**
@@ -329,7 +352,7 @@ Friend.prototype._attachElements = function() {
   ];
 
   if (this._options.transforms && transformsSupported) {
-    css[this._transformName] = transformValue.join(' ');
+    css[transformName] = transformValue.join(' ');
   } else {
     css.left = leftPoint + 'px';
     css.top = topPoint + 'px';

@@ -8,6 +8,10 @@
     <link href="//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" rel="stylesheet">
 
     <style>
+      body {
+        padding: 200px;
+      }
+
       #tether-target,
       #friend-target {
         background: green;
@@ -22,14 +26,22 @@
         height: 50px;
         width: 50px;
       }
+
+      #friend-element {
+        position: relative;
+      }
     </style>
   </head>
   <body>
 
-    <div id="tether-element"></div>
+    <div class="container">
+      <div id="tether-element"></div>
+    </div>
     <div id="tether-target"></div>
 
-    <div id="friend-element"></div>
+    <div class="container">
+      <div id="friend-element"></div>
+    </div>
     <div id="friend-target"></div>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
@@ -58,6 +70,19 @@
       setTimeout(function() {
         $('body').css('overflow', 'scroll');
       }, 1000);
+
+      setTimeout(function() {
+        friend.update({
+          element: {
+            attach: ['middle', 'top'],
+            offset: [10, 10]
+          }
+        });
+      }, 2000);
+
+      setTimeout(function() {
+        friend.disable();
+      }, 5000);
     </script>
   </body>
 </html>

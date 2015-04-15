@@ -121,13 +121,11 @@ module.exports = {
         var regValue = overflow + overflowY + overflowX;
 
         if (regTest.test(regValue)) {
-          if (positionType !== 'absolute' ||
-             (
+          if (positionType !== 'absolute' || (
                parentPositionType === 'relative' ||
                parentPositionType === 'absolute' ||
                parentPositionType === 'fixed'
-             )
-          ) {
+          )) {
             parents.push(parentNode);
           }
         }
@@ -183,7 +181,7 @@ module.exports = {
   cssTransformSupported: function() {
     var isSupported = false;
     var propName = 'transform';
-    var domPrefixes = 'Webkit Moz ms O'.split(' ');
+    var domPrefixes = 'Webkit Moz ms MS O WebKit'.split(' ');
     var el = document.createElement('div');
     var propNameCapital = null;
 
