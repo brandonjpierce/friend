@@ -1,11 +1,4 @@
 /**
- * TODO
- *
- * 1. setup a small caching system so we can reduce our position() calls
- * 2. insert element back into original dom position when disabled
- */
-
-/**
  * Dependencies
  */
 var EventEmitter = require('event-emitter');
@@ -168,9 +161,11 @@ Friend.prototype._initialize = function() {
 
   // determine if our position function is throttled or regular
   var positionFn = this.position.bind(this);
+  var throttleSpeed = this._options.throttleSpeed;
+
   this._positionFn = this._options.throttle ?
-    utils.throttle(positionFn, this._options.throttleSpeed) :
-    positionFn;
+                     utils.throttle(positionFn, throttleSpeed) :
+                     positionFn;
 
   // auto enable Friend if option is set
   if (this._options.enabled) {
@@ -275,11 +270,10 @@ Friend.prototype._getInitialStyles = function() {
  */
 Friend.prototype._setFriendStyles = function() {
   var positionType = utils.getStyles(this.target.node).position;
-
   var css = {
     position: positionType === 'fixed' ? positionType : 'absolute',
-    left: 0,
-    top: 0
+    top: 0,
+    left: 0
   };
 
   if (this._options.animate) {
@@ -302,8 +296,6 @@ Friend.prototype._setFriendStyles = function() {
       this.element.node.style[key] = css[key];
     }
   }
-
-  this._initalStylesSet = true;
 };
 
 /**
@@ -410,12 +402,12 @@ Friend.prototype._getBounds = function(element) {
  * @api private
  */
 Friend.prototype._getElementAttachment = function() {
-  var bounds = this.element.bounds = this._getBounds(this.element.node);
+  var bounds = this._getBounds(this.element.node);
   var attachments = this._options.element.attach;
   var offset = this._options.element.offset || [0, 0];
-  var points = {};
   var x = attachments[0];
   var y = attachments[1];
+  var points = {};
 
   if (attachments.length <= 1) {
     throw new Error('Invalid attach property set for element object');
@@ -440,8 +432,6 @@ Friend.prototype._getElementAttachment = function() {
   points.left = xValues[x];
   points.top = yValues[y];
 
-  this.element.attachment = points;
-
   return points;
 };
 
@@ -455,11 +445,11 @@ Friend.prototype._getTargetAttachment = function() {
   var documentEl = document.documentElement;
   var offsetX = window.pageXOffset || documentEl.scrollLeft;
   var offsetY = window.pageYOffset || documentEl.scrollTop;
-  var bounds = this.target.bounds = this._getBounds(this.target.node);
+  var bounds = this._getBounds(this.target.node);
   var attachments = this._options.target.attach || this._options.element.attach;
-  var points = {};
   var x = attachments[0];
   var y = attachments[1];
+  var points = {};
 
   var xValues = {
     left: bounds.left,
@@ -477,10 +467,8 @@ Friend.prototype._getTargetAttachment = function() {
     throw new Error('Invalid attach values for target object');
   }
 
-  points.left = xValues[x] + offsetX;
-  points.top = yValues[y] + offsetY;
-
-  this.target.attachment = points;
+  points.left = xValues[x] + (offsetX - (documentEl.clientLeft  || 0));
+  points.top = yValues[y] + (offsetY - (documentEl.clientTop  || 0));
 
   return points;
 };

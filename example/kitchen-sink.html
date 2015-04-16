@@ -8,8 +8,12 @@
     <link href="//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" rel="stylesheet">
 
     <style>
+      html {
+        height: 100%;
+      }
+
       body {
-        padding: 200px;
+        min-height: 100%;
       }
 
       #tether-target,
@@ -24,11 +28,11 @@
       #friend-element {
         background: red;
         height: 50px;
-        width: 50px;
+        width: 50%;
       }
 
       #friend-element {
-        position: relative;
+        background: blue;
       }
     </style>
   </head>
@@ -51,38 +55,29 @@
     <script>
       var tether = new Tether({
         element: '#tether-element',
-        target: '#tether-target',
-        attachment: 'top left',
-        targetAttachment: 'top right'
+        target: 'body',
+        attachment: 'middle right',
+        targetAttachment: 'middle right'
       });
 
       var friend = new Friend({
+        animate: true,
         element: {
           selector: '#friend-element',
-          attach: ['left', 'top']
+          attach: ['right', 'middle']
         },
         target: {
-          selector: '#friend-target',
-          attach: ['right', 'top']
+          selector: 'body',
+          attach: ['right', 'middle']
         }
       });
 
       setTimeout(function() {
         $('body').css('overflow', 'scroll');
+        $('#friend-element, #tether-element').width(200);
+        tether.position();
+        friend.position();
       }, 1000);
-
-      setTimeout(function() {
-        friend.update({
-          element: {
-            attach: ['middle', 'top'],
-            offset: [10, 10]
-          }
-        });
-      }, 2000);
-
-      setTimeout(function() {
-        friend.disable();
-      }, 5000);
     </script>
   </body>
 </html>
