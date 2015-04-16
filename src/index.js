@@ -10,7 +10,6 @@ var utils = require('utils');
  */
 var transformsSupported = utils.cssTransformSupported();
 var vendorPrefix = utils.getVendorPrefix().lowercase;
-var transitionName = vendorPrefix + 'Transition';
 var transformName = vendorPrefix + 'Transform';
 
 /**
@@ -19,9 +18,6 @@ var transformName = vendorPrefix + 'Transform';
 var DEFAULTS = {
   enabled: true,
   transforms: transformsSupported,
-  animate: false,
-  animationDuration: '100ms',
-  animationEasing: 'cubic-bezier(0.55,0,0.1,1)',
   throttle: false,
   throttleSpeed: 100,
 };
@@ -181,13 +177,22 @@ Friend.prototype._initialize = function() {
  * @api private
  */
 Friend.prototype._enableHandlers = function() {
-  // this will handle nested scroll elements
   this.target.scrollParents.forEach(function(node) {
     utils.addEvent(node, 'scroll', this._positionFn);
   }, this);
 
-  utils.addEvent(this.target.node, 'friend:' + EVENTS.positioned, this._positionFn);
   utils.addEvent(window, 'resize', this._positionFn);
+
+  // we only want to listen to the friend browser event if were inside
+  // a nested scroll container so that we can listen to our targets scroll
+  // event as well
+  if (this.target.scrollParents.length > 1) {
+    utils.addEvent(
+      this.target.node,
+      'friend:' + EVENTS.positioned,
+      this._positionFn
+    );
+  }
 };
 
 /**
@@ -201,7 +206,14 @@ Friend.prototype._disableHandlers = function() {
   }, this);
 
   utils.removeEvent(window, 'resize', this._positionFn);
-  utils.removeEvent(this.target.node, 'friend:' + EVENTS.positioned, this._positionFn);
+
+  if (this.target.scrollParents.length > 1) {
+    utils.removeEvent(
+      this.target.node,
+      'friend:' + EVENTS.positioned,
+      this._positionFn
+    );
+  }
 };
 
 /**
@@ -215,10 +227,20 @@ Friend.prototype._findNodes = function() {
 
   // target node and scroll parents
   this.target.node = utils.getDomNode(target);
+
+  if (!this.target.node) {
+    throw new Error('Could not find target node');
+  }
+
   this.target.scrollParents = utils.getScrollParents(this.target.node);
 
   // element node and initial data
   this.element.node = utils.getDomNode(element);
+
+  if (!this.element.node) {
+    throw new Error('Could not find element node');
+  }
+
   this.element.initialStyles = this._getInitialStyles();
   this.element.initialParent = this.element.node.parentNode;
 };
@@ -276,21 +298,6 @@ Friend.prototype._setFriendStyles = function() {
     left: 0
   };
 
-  if (this._options.animate) {
-    var easing = this._options.animationEasing;
-    var duration = this._options.animationDuration;
-    var animStyle = duration + ' ' + easing;
-    var anim = null;
-
-    if (this._options.transforms && transformsSupported) {
-      anim = 'transform ' + ' ' + animStyle;
-    } else {
-      anim = 'left ' + animStyle + ', top ' + animStyle;
-    }
-
-    css[transitionName] = anim;
-  }
-
   for (var key in css) {
     if (css.hasOwnProperty(key)) {
       this.element.node.style[key] = css[key];
@@ -312,10 +319,6 @@ Friend.prototype._removeFriendStyles = function() {
 
   if (this._options.transforms && transformsSupported) {
     css[transformName] = null;
-  }
-
-  if (this._options.animate) {
-    css[transitionName] = null;
   }
 
   for (var key in css) {
@@ -356,13 +359,7 @@ Friend.prototype._attachElements = function() {
     }
   }
 
-  // If our items are animating only call our positioning event after they
-  // have successfully been positioned
-  if (this._options.animate) {
-    utils.onAnimationEnd(this.element.node, function() {
-      utils.triggerEvent(this.element.node, 'friend:' + EVENTS.positioned);
-    }.bind(this));
-  } else {
+  if (this.target.scrollParents.length > 1) {
     utils.triggerEvent(this.element.node, 'friend:' + EVENTS.positioned);
   }
 
@@ -377,6 +374,9 @@ Friend.prototype._attachElements = function() {
  * @api private
  */
 Friend.prototype._getBounds = function(element) {
+  var documentEl = document.documentElement;
+  var offsetX = window.pageXOffset || documentEl.scrollLeft;
+  var offsetY = window.pageYOffset || documentEl.scrollTop;
   var bounds = {};
   var clientRect = element.getBoundingClientRect();
 
@@ -391,6 +391,11 @@ Friend.prototype._getBounds = function(element) {
     bounds.width = element.offsetWidth;
     bounds.height = element.offsetHeight;
   }
+
+  bounds.left += offsetX;
+  bounds.top += offsetY;
+
+  console.log(bounds);
 
   return bounds;
 };

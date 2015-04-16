@@ -32,10 +32,10 @@
     <div id="start"></div>
     <div id="test"></div>
 
-    <script src="../dist/friend.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/tether/0.6.5/tether.min.js"></script>
     <script>
       var max = 12;
-      var offset = [0, 0];
+      var offset = [10, -10];
       var fragment = document.createDocumentFragment();
 
       for (var i = 1; i <= max; i++) {
@@ -54,18 +54,11 @@
         var eAttach = ['left', 'top'];
         var tAttach = ['right', 'bottom'];
 
-        var foo = new Friend({
-          // throttle: true,
-          // throttleSpeed: 500,
-          element: {
-            selector: eSelector,
-            attach: eAttach,
-            offset: offset
-          },
-          target: {
-            selector: tSelector,
-            attach: tAttach
-          }
+        var foo = new Tether({
+          target: tSelector,
+          element: eSelector,
+          attachment: 'top left',
+          targetAttachment: 'bottom right'
         });
       }
     </script>

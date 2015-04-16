@@ -22,25 +22,6 @@ module.exports = {
   },
 
   /**
-   * Event capturing for css transitions
-   *
-   * @param {Object} obj DOM node you want to attach event to
-   * @param {Function} fn Callback func for event
-   */
-  onAnimationEnd: function(obj, fn) {
-    var prefixes = ['webkit', 'moz', 'MS', 'o', ''];
-    var e = 'TransitionEnd';
-
-    for (var i = 0, len = prefixes.length; i !== len; i++) {
-      if (!prefixes[i]) {
-        e = e.toLowerCase();
-      }
-
-      this.addEvent(obj, prefixes[i] + e, fn);
-    }
-  },
-
-  /**
    * Attach event handler to DOM node
    *
    * @param {Object} obj  DOM node
@@ -96,10 +77,6 @@ module.exports = {
    * @param {Object} node DOM node
    */
   getScrollParents: function(node) {
-    if (node.nodeType !== 1) {
-      return document;
-    }
-
     var positionType = this.getStyles(node).position;
     var parentNode = node.parentNode;
     var parents = [];
