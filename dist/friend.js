@@ -434,8 +434,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var documentEl = document.documentElement;
 	  var offsetX = window.pageXOffset || documentEl.scrollLeft;
 	  var offsetY = window.pageYOffset || documentEl.scrollTop;
-	  var bounds = {};
 	  var clientRect = element.getBoundingClientRect();
+	  var bounds = {};
 
 	  for (var key in clientRect) {
 	    if (clientRect.hasOwnProperty(key)) {
@@ -443,16 +443,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }
 
-	  // older versions of some browsers do not ship width / height
-	  if (!bounds.hasOwnProperty('width') || !bounds.hasOwnProperty('height')) {
-	    bounds.width = element.offsetWidth;
-	    bounds.height = element.offsetHeight;
-	  }
-
-	  bounds.left += offsetX;
-	  bounds.top += offsetY;
-
-	  console.log(bounds);
+	  // if (!bounds.hasOwnProperty('width') || !bounds.hasOwnProperty('height')) {
+	  //   bounds.width = element.offsetWidth;
+	  //   bounds.height = element.offsetHeight;
+	  // }
 
 	  return bounds;
 	};
