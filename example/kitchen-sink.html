@@ -35,6 +35,7 @@
     <script src="../dist/friend.js"></script>
     <script>
       var max = 200;
+
       var offset = [0, 0];
       var fragment = document.createDocumentFragment();
 
@@ -52,7 +53,7 @@
         var eSelector = '#friend-' + i;
         var tSelector = i == 1 ? '#start' : '#friend-' + (i - 1);
         var eAttach = ['left', 'top'];
-        var tAttach = ['right', 'bottom'];
+        var tAttach = ['left', 'bottom'];
 
         var foo = new Friend({
           elementSelector: eSelector,
