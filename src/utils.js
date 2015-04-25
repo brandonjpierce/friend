@@ -72,6 +72,24 @@ module.exports = {
   },
 
   /**
+   * Get position and dimension information for a DOM node
+   *
+   * @param {Object} node DOM node we want to get data for
+   * @return {Object} Dom node ClientRect bound data
+   */
+  getBounds: function(node) {
+    var bounds = node.getBoundingClientRect();
+
+    // older versions of some browsers do not ship width / height
+    if (!bounds.hasOwnProperty('width') || !bounds.hasOwnProperty('height')) {
+      bounds.width = node.offsetWidth;
+      bounds.height = node.offsetHeight;
+    }
+
+    return bounds;
+  },
+
+  /**
    * Get an array of scrollable parents for a particular node
    *
    * @param {Object} node DOM node

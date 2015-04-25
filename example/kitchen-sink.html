@@ -34,7 +34,7 @@
 
     <script src="../dist/friend.js"></script>
     <script>
-      var max = 12;
+      var max = 200;
       var offset = [0, 0];
       var fragment = document.createDocumentFragment();
 
@@ -55,17 +55,10 @@
         var tAttach = ['right', 'bottom'];
 
         var foo = new Friend({
-          // throttle: true,
-          // throttleSpeed: 500,
-          element: {
-            selector: eSelector,
-            attach: eAttach,
-            offset: offset
-          },
-          target: {
-            selector: tSelector,
-            attach: tAttach
-          }
+          elementSelector: eSelector,
+          elementAttach: eAttach,
+          targetSelector: tSelector,
+          targetAttach: tAttach
         });
       }
     </script>
