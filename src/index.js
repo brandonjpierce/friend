@@ -160,8 +160,8 @@ Friend.prototype._initialize = function() {
   var throttleSpeed = this._options.throttleSpeed;
 
   this._positionFn = this._options.throttle ?
-                     utils.throttle(positionFn, throttleSpeed) :
-                     positionFn;
+    utils.throttle(positionFn, throttleSpeed) :
+    positionFn;
 
   // auto enable Friend if option is set
   if (this._options.enabled) {
@@ -183,9 +183,6 @@ Friend.prototype._enableHandlers = function() {
 
   utils.addEvent(window, 'resize', this._positionFn);
 
-  // we only want to listen to the friend browser event if were inside
-  // a nested scroll container so that we can listen to our targets scroll
-  // event as well
   if (this.target.scrollParents.length > 1) {
     utils.addEvent(
       this.target.node,
