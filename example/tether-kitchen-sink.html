@@ -31,9 +31,34 @@
   <body>
     <div id="start"></div>
     <div id="test"></div>
-
+    <script src="//cdnjs.cloudflare.com/ajax/libs/stats.js/r11/Stats.js"></script>
+    <script src="memory-stats.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/tether/0.6.5/tether.min.js"></script>
     <script>
+      var memStats = new MemoryStats();
+      memStats.domElement.style.position = 'fixed';
+      memStats.domElement.style.right = '105px';
+      memStats.domElement.style.top = '10px';
+      document.body.appendChild(memStats.domElement);
+
+      requestAnimationFrame(function rAFloop(){
+        memStats.update();
+        requestAnimationFrame(rAFloop);
+      });
+
+     var stats = new Stats();
+     stats.domElement.style.position = 'fixed';
+     stats.domElement.style.right = '10px';
+     stats.domElement.style.top = '10px';
+     document.body.appendChild( stats.domElement );
+
+     requestAnimationFrame(function rAFloop2(){
+       stats.begin();
+       stats.end();
+       requestAnimationFrame(rAFloop2);
+     });
+
+
       var max = 200;
       var offset = [10, -10];
       var fragment = document.createDocumentFragment();
@@ -59,7 +84,7 @@
           element: eSelector,
           attachment: 'top left',
           targetAttachment: 'bottom left',
-          offset: '-10px -10px'
+          offset: '-10px 0'
         });
       }
     </script>

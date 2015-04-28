@@ -6,6 +6,12 @@ var extend = require('extend');
 var utils = require('utils');
 
 /**
+ * Localize some globals
+ */
+var root = window;
+var doc = document;
+
+/**
  * Localize some utils vars
  */
 var transformsSupported = utils.cssTransformSupported();
@@ -182,7 +188,7 @@ Friend.prototype._enableHandlers = function() {
     utils.addEvent(node, 'scroll', this._positionFn);
   }, this);
 
-  utils.addEvent(window, 'resize', this._positionFn);
+  utils.addEvent(root, 'resize', this._positionFn);
 };
 
 /**
@@ -195,7 +201,7 @@ Friend.prototype._disableHandlers = function() {
     utils.removeEvent(node, 'scroll', this._positionFn);
   }, this);
 
-  utils.removeEvent(window, 'resize', this._positionFn);
+  utils.removeEvent(root, 'resize', this._positionFn);
 };
 
 /**
@@ -235,7 +241,7 @@ Friend.prototype._findNodes = function() {
 Friend.prototype._moveElement = function() {
   if (this.element.node.parentNode.tagName !== 'BODY') {
     this.element.node.parentNode.removeChild(this.element.node);
-    document.body.appendChild(this.element.node);
+    doc.body.appendChild(this.element.node);
   }
 };
 
@@ -246,7 +252,7 @@ Friend.prototype._moveElement = function() {
  */
 Friend.prototype._moveBackElement = function() {
   if (this.element.initialParent.tagName !== 'BODY') {
-    document.body.removeChild(this.element.node);
+    doc.body.removeChild(this.element.node);
     this.element.initialParent.appendChild(this.element.node);
   }
 };
@@ -322,12 +328,12 @@ Friend.prototype._attachElements = function() {
   var topPoint = Math.round(targetAttach.top - elementAttach.top);
   var css = {};
 
-  if (this.cache.left !== leftPoint || this.cache.top !== topPoint) {
-    this.cache.left = leftPoint;
-    this.cache.top = topPoint;
-  } else {
+  if (this.cache.left === leftPoint && this.cache.top === topPoint) {
     return;
   }
+
+  this.cache.left = leftPoint;
+  this.cache.top = topPoint;
 
   var transformValue = [
     'translateZ(0)',
@@ -398,9 +404,9 @@ Friend.prototype._getElementAttachment = function() {
  * @api private
  */
 Friend.prototype._getTargetAttachment = function() {
-  var documentEl = document.documentElement;
-  var offsetX = window.pageXOffset || documentEl.scrollLeft;
-  var offsetY = window.pageYOffset || documentEl.scrollTop;
+  var documentEl = doc.documentElement;
+  var offsetX = root.pageXOffset || documentEl.scrollLeft;
+  var offsetY = root.pageYOffset || documentEl.scrollTop;
   var bounds = utils.getBounds(this.target.node);
   var attachments = this._options.targetAttach || this._options.elementAttach;
   var x = attachments[0];
