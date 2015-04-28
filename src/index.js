@@ -19,7 +19,7 @@ var DEFAULTS = {
   enabled: true,
   transforms: transformsSupported,
   throttle: false,
-  throttleSpeed: 100,
+  throttleSpeed: 200,
 };
 
 /**
@@ -47,6 +47,7 @@ EventEmitter(Friend.prototype);
 function Friend(options) {
   this._enabled = false;
   this._options = extend({}, DEFAULTS, options);
+  this.cache = { left: null, top: null };
   this.element = {};
   this.target = {};
 
@@ -182,14 +183,6 @@ Friend.prototype._enableHandlers = function() {
   }, this);
 
   utils.addEvent(window, 'resize', this._positionFn);
-
-  if (this.target.scrollParents.length > 1) {
-    utils.addEvent(
-      this.target.node,
-      'friend:' + EVENTS.positioned,
-      this._positionFn
-    );
-  }
 };
 
 /**
@@ -203,14 +196,6 @@ Friend.prototype._disableHandlers = function() {
   }, this);
 
   utils.removeEvent(window, 'resize', this._positionFn);
-
-  if (this.target.scrollParents.length > 1) {
-    utils.removeEvent(
-      this.target.node,
-      'friend:' + EVENTS.positioned,
-      this._positionFn
-    );
-  }
 };
 
 /**
@@ -219,8 +204,8 @@ Friend.prototype._disableHandlers = function() {
  * @api private
  */
 Friend.prototype._findNodes = function() {
-  var element = this._options.element.selector;
-  var target = this._options.target.selector;
+  var element = this._options.elementSelector;
+  var target = this._options.targetSelector;
 
   // target node and scroll parents
   this.target.node = utils.getDomNode(target);
@@ -337,6 +322,13 @@ Friend.prototype._attachElements = function() {
   var topPoint = Math.round(targetAttach.top - elementAttach.top);
   var css = {};
 
+  if (this.cache.left !== leftPoint || this.cache.top !== topPoint) {
+    this.cache.left = leftPoint;
+    this.cache.top = topPoint;
+  } else {
+    return;
+  }
+
   var transformValue = [
     'translateZ(0)',
     'translateX(' + leftPoint + 'px)',
@@ -356,39 +348,7 @@ Friend.prototype._attachElements = function() {
     }
   }
 
-  if (this.target.scrollParents.length > 1) {
-    utils.triggerEvent(this.element.node, 'friend:' + EVENTS.positioned);
-  }
-
   this.emit(EVENTS.positioned);
-};
-
-/**
- * Get position and dimension information for a DOM node
- *
- * @param {Node} element DOM node we want to get data for
- * @return {Object} Dom node ClientRect bound data
- * @api private
- */
-Friend.prototype._getBounds = function(element) {
-  var documentEl = document.documentElement;
-  var offsetX = window.pageXOffset || documentEl.scrollLeft;
-  var offsetY = window.pageYOffset || documentEl.scrollTop;
-  var clientRect = element.getBoundingClientRect();
-  var bounds = {};
-
-  for (var key in clientRect) {
-    if (clientRect.hasOwnProperty(key)) {
-      bounds[key] = clientRect[key];
-    }
-  }
-
-  // if (!bounds.hasOwnProperty('width') || !bounds.hasOwnProperty('height')) {
-  //   bounds.width = element.offsetWidth;
-  //   bounds.height = element.offsetHeight;
-  // }
-
-  return bounds;
 };
 
 /**
@@ -398,9 +358,9 @@ Friend.prototype._getBounds = function(element) {
  * @api private
  */
 Friend.prototype._getElementAttachment = function() {
-  var bounds = this._getBounds(this.element.node);
-  var attachments = this._options.element.attach;
-  var offset = this._options.element.offset || [0, 0];
+  var bounds = utils.getBounds(this.element.node);
+  var attachments = this._options.elementAttach;
+  var offset = this._options.elementOffset || [0, 0];
   var x = attachments[0];
   var y = attachments[1];
   var points = {};
@@ -441,8 +401,8 @@ Friend.prototype._getTargetAttachment = function() {
   var documentEl = document.documentElement;
   var offsetX = window.pageXOffset || documentEl.scrollLeft;
   var offsetY = window.pageYOffset || documentEl.scrollTop;
-  var bounds = this._getBounds(this.target.node);
-  var attachments = this._options.target.attach || this._options.element.attach;
+  var bounds = utils.getBounds(this.target.node);
+  var attachments = this._options.targetAttach || this._options.elementAttach;
   var x = attachments[0];
   var y = attachments[1];
   var points = {};
@@ -463,8 +423,9 @@ Friend.prototype._getTargetAttachment = function() {
     throw new Error('Invalid attach values for target object');
   }
 
-  points.left = xValues[x] + (offsetX - (documentEl.clientLeft  || 0));
-  points.top = yValues[y] + (offsetY - (documentEl.clientTop  || 0));
+  // account for scroll offset
+  points.left = xValues[x] + offsetX;
+  points.top = yValues[y] + offsetY;
 
   return points;
 };

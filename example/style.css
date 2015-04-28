@@ -1,80 +1,103 @@
-html,
-body {
+html {
+  font: normal 112.5%/1.65 'Montserrat', sans-serif;
   height: 100%;
 }
 
 body {
+  min-height: 100%;
+  word-wrap: break-word;
+  color: #444;
+}
+
+small {
+  font-size: 65%;
+}
+
+p {
+  margin: auto auto 1.5em;
+}
+
+pre code {
+  word-wrap: normal;
+  white-space: -moz-pre-wrap;
+  white-space: pre-wrap;
+}
+
+pre {
+  white-space: pre;
+}
+
+code {
+  white-space: pre;
+  font-family: monospace;
+}
+
+#sidebar {
+  position: fixed;
+  top: 200px;
+  left: 200px;
+  padding: 0;
   margin: 0;
+  z-index: 2;
+}
+
+#sidebar > li {
+  display: block;
+}
+
+#sidebar > li > a {
+  display: block;
+  text-transform: uppercase;
+  color: #777;
+  padding: 10px 0;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+#content {
+  position: relative;
+  padding-left: 450px;
+  padding-top: 200px;
+  width: 700px;
 }
 
 #hero {
-  background: #eee;
+  margin-bottom: 54px;
+  margin-bottom: 3rem;
 }
 
-#test-target {
-  background: green;
-  padding: 10px;
-  color: white;
+#hero-title {
+  font-size: 60px;
+  font-size: 3.33333rem;
+  margin-bottom: 8.91px;
+  margin-bottom: 0.495rem;
+  text-transform: uppercase;
 }
 
-#test-element {
-  background: black;
-  color: white;
-  padding: 10px;
-}
-.element,
-.target {
-  width: 100px;
-  height: 100px;
-  color: #fff;
-  line-height: 100px;
-  text-align: center;
+#hero-title,
+.section-title {
+  line-height: 1;
+  margin-top: 0;
+  text-rendering: optimizeLegibility;
+  color: #222222;
 }
 
-.element {
-  background: #666;
+#hero-text,
+.section-title {
+  font-size: 21px;
+  font-size: 1.16667rem;
+  margin-bottom: 25.45714px;
+  margin-bottom: 1.41429rem;
 }
 
-.target {
-  background: #333;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin-top: -50px;
-  margin-left: -50px;
+.section-title {
+  color: #999;
+  text-transform: uppercase;
+  font-weight: normal;
 }
 
-.scroll-container {
-  border-radius: 4px;
-  position: relative;
-  border: 4px solid #111;
-  height: 400px;
-}
-
-.scroll-container  .scroll-container {
-  margin: 30px;
-}
-
-.scroll-container.y {
-  overflow-y: auto;
-}
-
-.scroll-container.x {
-  overflow-x: auto;
-}
-
-.scroll-box.y {
-  height: 200%;
-}
-
-.scroll-box.x {
-  width: 200%;
-}
-
-.code-container {
-  border: 4px solid #ddd;
-  background: #eee;
-  border-radius: 4px;
-  height: 400px;
-  overflow-y: auto;
+.code-label {
+  color: #777;
+  display: block;
+  margin-bottom: .65em;
 }

@@ -5,302 +5,47 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Friend.js - A small, extendable, performance focused, and dependency free JavaScript positioning engine</title>
-    <link href="//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/styles/solarized_light.min.css" rel="stylesheet">
+    <link href='http://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
+    <link href="normalize.css" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.5/languages/javascript.min.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
   </head>
   <body>
-    <div id="header">
+    <ul id="sidebar">
+      <li>
+        <a href="#getting-started">Getting Started</a>
+      </li>
+      <li>
+        <a href="#options">Options</a>
+      </li>
+      <li>
+        <a href="#methods">Methods</a>
+      </li>
+      <li>
+        <a href="#events">Events</a>
+      </li>
+      <li>
+        <a href="#example">Example</a>
+      </li>
+    </ul>
+    <div id="content">
+      <div id="hero">
+        <h1 id="hero-title">Friend</h1>
+        <p id="hero-text">A small, extendable, performance focused, and dependency free JavaScript positioning engine.</p>
+      </div>
+      <div id="getting-started">
+        <h3 class="section-title">Getting started</h3>
+        <p>Include Friend into your application.</p>
 
-    </div>
-    <div id="test-target">target</div>
-    <div id="test-element">element</div>
-    <div id="hero">
-      <h1>Friend.js</h1>
-      <p>A small, extendable, performance focused, and dependency free JavaScript positioning engine.</p>
-    </div>
-    <div class="container">
-      <div class="row">
-        <div class="nine columns">
-          <h1>Basic example</h1>
-          <div class="scroll-container y x">
-            <div class="scroll-box y x">
-              <div id="example-1-element" class="element">
-                Element
-              </div>
-              <div id="example-1-target" class="target">
-                Target
-              </div>
-            </div>
-          </div>
-<pre><code class="javascript">new Friend({
-  element: {
-    selector: '#example-1-element',
-    attach: ['left', 'middle'], // x, y
-  },
-  target: {
-    selector: '#example-1-target',
-    attach: ['right', 'middle']
-  }
-});</pre></code>
-        </div>
-        <div class="three columns">
-            asdadsadsa
-        </div>
+        <small class="code-label">NPM</small>
+
+        <small class="code-label">Manually</small>
+
+        <p>Instantiate a new Friend instance</p>
+
+      </div>
+      <div id="options">
+
       </div>
     </div>
-
-    <div id="example-2">
-      <div class="container">
-        <h1>Animation</h1>
-        <div class="row">
-          <div class="one-half column">
-            <div class="code-container">
-              <div class="code-box">
-                Some code here
-              </div>
-            </div>
-          </div>
-          <div class="one-half column">
-            <div class="scroll-container y x">
-              <div class="scroll-box y x">
-                <div id="example-2-element" class="element">
-                  Element
-                </div>
-                <div id="example-2-target" class="target">
-                  Target
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="example-3">
-      <div class="container">
-        <h1>Friend attached to a friend</h1>
-        <div class="row">
-          <div class="one-half column">
-            <div class="code-container">
-              <div class="code-box">
-                Some code here
-              </div>
-            </div>
-          </div>
-          <div class="one-half column">
-            <div class="scroll-container y x">
-              <div class="scroll-box y x">
-                <div id="example-3-element" class="element">
-                  Element
-                </div>
-                <div id="example-3-element-2" class="element">
-                  Element 2
-                </div>
-                <div id="example-3-target" class="target">
-                  Target
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="example-4">
-      <div class="container">
-        <h1>Nested scrollable containers</h1>
-        <div class="row">
-          <div class="one-half column">
-            <div class="code-container">
-              <div class="code-box">
-                Some code here
-              </div>
-            </div>
-          </div>
-          <div class="one-half column">
-            <div class="scroll-container y">
-              <div class="scroll-box y">
-                <div class="scroll-container x">
-                  <div class="scroll-box x" style="height: 100%;">
-                    <div id="example-4-element" class="element">
-                      Element
-                    </div>
-                    <div id="example-4-target" class="target">
-                      Target
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="example-5">
-      <div class="container">
-        <h1>Offset</h1>
-        <div class="row">
-          <div class="one-half column">
-            <div class="code-container">
-              <div class="code-box">
-                Some code here
-              </div>
-            </div>
-          </div>
-          <div class="one-half column">
-            <div class="scroll-container y x">
-              <div class="scroll-box y x">
-                <div id="example-5-element" class="element">
-                  Element
-                </div>
-                <div id="example-5-target" class="target">
-                  Target
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="example-6">
-      <div class="container">
-        <h1>Throttled scrolling / resizing</h1>
-        <div class="row">
-          <div class="one-half column">
-            <div class="code-container">
-              <div class="code-box">
-                Some code here
-              </div>
-            </div>
-          </div>
-          <div class="one-half column">
-            <div class="scroll-container y x">
-              <div class="scroll-box y x">
-                <div id="example-6-element" class="element">
-                  Element
-                </div>
-                <div id="example-6-target" class="target">
-                  Target
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <script src="../dist/friend.js"></script>
-
-    <script>
-      var test = new Friend({
-        element: {
-          selector: '#test-element',
-          attach: ['left', 'top'], // x, y
-        },
-        target: {
-          selector: '#test-target',
-          attach: ['right', 'top']
-        }
-      });
-
-      var example1 = new Friend({
-        element: {
-          selector: '#example-1-element',
-          attach: ['left', 'middle'], // x, y
-        },
-        target: {
-          selector: '#example-1-target',
-          attach: ['right', 'middle']
-        }
-      });
-
-      var example2 = new Friend({
-        animate: true,
-        animationDuration: '400ms',
-        element: {
-          selector: '#example-2-element',
-          attach: ['left', 'middle'], // x, y
-        },
-        target: {
-          selector: '#example-2-target',
-          attach: ['right', 'middle']
-        }
-      });
-
-      var example3 = new Friend({
-        element: {
-          selector: '#example-3-element',
-          attach: ['left', 'middle'], // x, y
-        },
-        target: {
-          selector: '#example-3-target',
-          attach: ['right', 'middle']
-        }
-      });
-
-      var example3dos = new Friend({
-        element: {
-          selector: '#example-3-element-2',
-          attach: ['left', 'middle'], // x, y
-        },
-        target: {
-          selector: '#example-3-element',
-          attach: ['right', 'middle']
-        }
-      });
-
-      var example4 = new Friend({
-        element: {
-          selector: '#example-4-element',
-          attach: ['left', 'middle'], // x, y
-        },
-        target: {
-          selector: '#example-4-target',
-          attach: ['right', 'middle']
-        }
-      });
-
-      var example5 = new Friend({
-        element: {
-          selector: '#example-5-element',
-          attach: ['left', 'middle'], // x, y
-          offset: [10, 0] // x, y
-        },
-        target: {
-          selector: '#example-5-target',
-          attach: ['right', 'middle']
-        }
-      });
-
-      var example6 = new Friend({
-        animate: true,
-        throttle: true,
-        throttleSpeed: 200,
-        element: {
-          selector: '#example-6-element',
-          attach: ['left', 'middle'] // x, y
-        },
-        target: {
-          selector: '#example-6-target',
-          attach: ['right', 'middle']
-        }
-      });
-
-      //
-      // var example2 = new Friend({
-      //   element: {
-      //     selector: '#baz',
-      //     attach: ['left', 'bottom'], // x, y
-      //     offset: [0, 0] // x, y
-      //   },
-      //   target: {
-      //     selector: '#bar'
-      //   }
-      // });
-    </script>
   </body>
 </html>

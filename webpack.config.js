@@ -15,7 +15,7 @@ module.exports = {
     modulesDirectories: ['node_modules', 'src'],
   },
   plugins: [
-    // new webpack.optimize.UglifyJsPlugin(),
+    new webpack.optimize.UglifyJsPlugin(),
     new webpack.BannerPlugin(banner)
   ]
 };
